@@ -76,6 +76,29 @@ class KossjsFlutterBindings {
   late final _eval = _evalPtr
       .asFunction<ffi.Pointer<ffi.Char> Function(int, ffi.Pointer<ffi.Char>)>();
 
+  ffi.Pointer<ffi.Char> run_async(
+    int inst,
+    ffi.Pointer<ffi.Char> code,
+    int timeout_ms,
+  ) {
+    return _run_async(inst, code, timeout_ms);
+  }
+
+  late final _run_asyncPtr =
+      _lookup<
+        ffi.NativeFunction<
+          ffi.Pointer<ffi.Char> Function(
+            ffi.LongLong,
+            ffi.Pointer<ffi.Char>,
+            ffi.Uint64,
+          )
+        >
+      >('run_async');
+  late final _run_async = _run_asyncPtr
+      .asFunction<
+        ffi.Pointer<ffi.Char> Function(int, ffi.Pointer<ffi.Char>, int)
+      >();
+
   void destroy(int inst) {
     return _destroy(inst);
   }

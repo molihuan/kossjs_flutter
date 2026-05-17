@@ -1,6 +1,6 @@
 {
   "app": {
-    "bundleName": "com.molihuan.kossjs_flutter",
+    "bundleName": "com.molihuan.kossjs_flutter_example",
     "vendor": "example",
     "versionCode": 1000000,
     "versionName": "1.0.0",

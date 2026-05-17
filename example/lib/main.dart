@@ -13,10 +13,20 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  // late Future<int> sumAsyncResult;
   late String version;
   int? inst;
-  TextEditingController codeController = TextEditingController(text: "1 + 2");
+  TextEditingController codeController = TextEditingController(
+    text:
+        """
+(async function() {
+    var r = await fetch('https://example.com', '{}');
+    var text = await r.text()
+    console.log(text)
+    return 'status=' + r.status + ', ok=' + r.ok;
+})()
+  """
+            .trim(),
+  );
 
   String tips = "";
 
@@ -26,20 +36,51 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
+  void destroyKossjs() {
+    if (inst != null) {
+      kossjs_flutter.destroy(inst!);
+      print("销毁kossJs instance :${inst}");
+    }
+  }
+
+  int? createKossjs() {
+    try {
+      destroyKossjs();
+      int inst = kossjs_flutter.create();
+      print("kossJs instance pointer :${inst}");
+      updateTips("koss_create success");
+      return inst;
+    } catch (e) {
+      updateTips("$e");
+    }
+    return null;
+  }
+
+  void _runCode(int? inst, String code) async {
+    if (inst == null) {
+      updateTips("请先执行koss_create");
+      return;
+    }
+    updateTips("执行中,请稍后...");
+    try {
+      String result = await kossjs_flutter.runAsync(inst, code, timeout: 5000);
+      print("result: ${result}");
+      updateTips("result: ${result}");
+    } catch (e) {
+      updateTips("$e");
+    }
+  }
+
   @override
   void initState() {
     super.initState();
-    // sumAsyncResult = kossjs_flutter.sumAsync(3, 4);
     version = kossjs_flutter.version();
     print("version: $version");
   }
 
   @override
   void dispose() {
-    if (inst != null) {
-      kossjs_flutter.destroy(inst!);
-      print("销毁kossJs instance :${inst}");
-    }
+    destroyKossjs();
     super.dispose();
   }
 
@@ -58,13 +99,7 @@ class _MyAppState extends State<MyApp> {
                 children: [
                   ElevatedButton(
                     onPressed: () {
-                      try {
-                        inst = kossjs_flutter.create();
-                        print("kossJs instance pointer :${inst}");
-                        updateTips("koss_create success");
-                      } catch (e) {
-                        updateTips("$e");
-                      }
+                      inst = createKossjs();
                     },
                     child: const Text("koss_create"),
                   ),
@@ -79,39 +114,13 @@ class _MyAppState extends State<MyApp> {
                   ),
                   spacerSmall,
                   ElevatedButton(
-                    onPressed: () {
-                      if (inst == null) {
-                        updateTips("请先执行koss_create");
-                        return;
-                      }
-                      try {
-                        String code = codeController.text;
-                        String result = kossjs_flutter.eval(inst!, code);
-                        print("result: ${result}");
-                        updateTips("result: ${result}");
-                      } catch (e) {
-                        updateTips("$e");
-                      }
+                    onPressed: () async {
+                      _runCode(inst, codeController.text);
                     },
                     child: const Text("koss_eval"),
                   ),
                   spacerSmall,
                   Text("提示:${tips}"),
-
-                  // spacerSmall,
-                  // FutureBuilder<int>(
-                  //   future: sumAsyncResult,
-                  //   builder: (BuildContext context, AsyncSnapshot<int> value) {
-                  //     final displayValue = (value.hasData)
-                  //         ? value.data
-                  //         : 'loading';
-                  //     return Text(
-                  //       'await sumAsync(3, 4) = $displayValue',
-                  //       style: textStyle,
-                  //       textAlign: TextAlign.center,
-                  //     );
-                  //   },
-                  // ),
                 ],
               ),
             ),

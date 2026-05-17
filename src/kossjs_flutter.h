@@ -25,4 +25,6 @@ FFI_PLUGIN_EXPORT long long create(void);
 
 FFI_PLUGIN_EXPORT const char * eval(long long inst,const char *code);
 
+FFI_PLUGIN_EXPORT const char * run_async(long long inst,const char *code,uint64_t timeout_ms);
+
 FFI_PLUGIN_EXPORT void destroy(long long inst);

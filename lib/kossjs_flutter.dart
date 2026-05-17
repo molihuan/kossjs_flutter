@@ -18,6 +18,17 @@ String eval(int inst, String code) => _bindings
     .cast<Utf8>()
     .toDartString();
 
+
+Future<String> runAsync(int inst, String code, {int timeout = 10000}) async{
+  final SendPort helperIsolateSendPort = await _helperIsolateSendPort;
+  final int requestId = _nextKossJsEvalRequestId++;
+  final _KossJsEvalRequest request = _KossJsEvalRequest(requestId, inst, code, timeout);
+  final Completer<String> completer = Completer<String>();
+  _kossJsEvalRequests[requestId] = completer;
+  helperIsolateSendPort.send(request);
+  return completer.future;
+}
+
 int sum(int a, int b) => _bindings.sum(a, b);
 
 Future<int> sumAsync(int a, int b) async {
@@ -65,11 +76,30 @@ class _SumResponse {
   const _SumResponse(this.id, this.result);
 }
 
+class _KossJsEvalRequest {
+  final int id;
+  final int inst;
+  final String code;
+  final int timeout;
+
+  const _KossJsEvalRequest(this.id, this.inst, this.code, this.timeout);
+}
+
+class _KossJsEvalResponse {
+  final int id;
+  final String result;
+
+  const _KossJsEvalResponse(this.id, this.result);
+}
+
 /// Counter to identify [_SumRequest]s and [_SumResponse]s.
 int _nextSumRequestId = 0;
+int _nextKossJsEvalRequestId = 0;
 
 /// Mapping from [_SumRequest] `id`s to the completers corresponding to the correct future of the pending request.
 final Map<int, Completer<int>> _sumRequests = <int, Completer<int>>{};
+
+final Map<int, Completer<String>> _kossJsEvalRequests = <int, Completer<String>>{};
 
 /// The SendPort belonging to the helper isolate.
 Future<SendPort> _helperIsolateSendPort = () async {
@@ -95,6 +125,13 @@ Future<SendPort> _helperIsolateSendPort = () async {
         completer.complete(data.result);
         return;
       }
+      if (data is _KossJsEvalResponse) {
+        // The helper isolate sent us a response to a request we sent.
+        final Completer<String> completer = _kossJsEvalRequests[data.id]!;
+        _sumRequests.remove(data.id);
+        completer.complete(data.result);
+        return;
+      }
       throw UnsupportedError('Unsupported message type: ${data.runtimeType}');
     });
 
@@ -106,6 +143,14 @@ Future<SendPort> _helperIsolateSendPort = () async {
         if (data is _SumRequest) {
           final int result = _bindings.sum_long_running(data.a, data.b);
           final _SumResponse response = _SumResponse(data.id, result);
+          sendPort.send(response);
+          return;
+        }
+        if (data is _KossJsEvalRequest) {
+          final String result = _bindings.run_async(data.inst, data.code.toNativeUtf8().cast<ffi.Char>(), data.timeout)
+              .cast<Utf8>()
+              .toDartString();
+          final _KossJsEvalResponse response = _KossJsEvalResponse(data.id, result);
           sendPort.send(response);
           return;
         }

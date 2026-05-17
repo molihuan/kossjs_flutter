@@ -30,6 +30,10 @@ FFI_PLUGIN_EXPORT const char * eval(long long inst,const char *code){
   return result.value;
 }
 
+FFI_PLUGIN_EXPORT const char * run_async(long long inst,const char *code,uint64_t timeout_ms){
+  return koss_run_async((KossInstance*)inst,code,timeout_ms).value;
+}
+
 FFI_PLUGIN_EXPORT void destroy(long long inst){
     koss_destroy((KossInstance*)inst);
 }

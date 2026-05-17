@@ -10,9 +10,6 @@ include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/third_party/KossJS/include
 )
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-omit-frame-pointer")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-omit-frame-pointer")
-
 add_library(${KOSSJS_CORE_LIB_NAME} SHARED IMPORTED)
 
 add_library(kossjs_flutter SHARED
@@ -95,6 +92,8 @@ elseif(WIN32)
   set(WIN_OUTPUT_DIR ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/runner/Debug)
   set(WIN_OUTPUT_DIR_DLL ${WIN_OUTPUT_DIR}/${KOSSJS_CORE_LIB_NAME}.dll)
 
+  set(WIN_OUTPUT_RELEASE_DIR ${CMAKE_BINARY_DIR}/${CMAKE_BUILD_TYPE}/runner/Release)
+
   message(WARNING "${M_TAG}:WIN_OUTPUT_DIR:${WIN_OUTPUT_DIR}")
 
   # 拷贝
@@ -102,8 +101,10 @@ elseif(WIN32)
           OUTPUT ${WIN_OUTPUT_DIR_DLL}
           # 创建目录
           COMMAND ${CMAKE_COMMAND} -E make_directory "${WIN_OUTPUT_DIR}"
+          COMMAND ${CMAKE_COMMAND} -E make_directory "${WIN_OUTPUT_RELEASE_DIR}"
           #拷贝
           COMMAND ${CMAKE_COMMAND} -E copy "${WIN_LIB_DIR_DLL}" "${WIN_OUTPUT_DIR}"
+          COMMAND ${CMAKE_COMMAND} -E copy "${WIN_LIB_DIR_DLL}" "${WIN_OUTPUT_RELEASE_DIR}"
           DEPENDS ${WIN_LIB_DIR_DLL}
           COMMENT "Copying libkossjs lib"
   )
